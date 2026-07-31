@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Predict the Output — Java Quiz (Set 4: Hard)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f0f1a;
+    --bg-elev:#161624;
+    --surface:#1c1c30;
+    --surface-2:#232338;
+    --border:#33334f;
+    --text:#e7e7f5;
+    --muted:#8c8cae;
+    --accent:#ff9f6b;
+    --accent-dim:#a8664d;
+    --good:#5fe3a3;
+    --good-bg:rgba(95,227,163,0.10);
+    --bad:#ff7d92;
+    --bad-bg:rgba(255,125,146,0.10);
+    --amber:#ffcb6b;
+    --mono:'JetBrains Mono', 'Courier New', monospace;
+    --sans:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, rgba(255,159,107,0.08), transparent 45%),
+      radial-gradient(circle at 85% 20%, rgba(95,227,163,0.05), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(15,15,26,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border);
+  }
+  .titlebar{ display:flex; align-items:center; gap:8px; padding:10px 20px 0; max-width:900px; margin:0 auto; }
+  .dot{width:11px;height:11px;border-radius:50%;}
+  .dot.red{background:#ff5f56;} .dot.yellow{background:#ffbd2e;} .dot.green{background:#27c93f;}
+  .filename{ margin-left:10px; font-family:var(--mono); font-size:12.5px; color:var(--muted); }
+  .difficulty{
+    margin-left:auto; font-family:var(--mono); font-size:11px; font-weight:700;
+    color:var(--accent); background:rgba(255,159,107,0.12); border:1px solid var(--accent-dim);
+    padding:3px 10px; border-radius:20px; letter-spacing:0.04em;
+  }
+  .header-main{ max-width:900px; margin:0 auto; padding:10px 20px 16px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .brand h1{ font-size:19px; margin:0; font-weight:800; letter-spacing:-0.01em; }
+  .brand h1 .accent{color:var(--accent);}
+  .brand p{ margin:2px 0 0; color:var(--muted); font-size:12.5px; font-family:var(--mono); }
+  .hud{ display:flex; align-items:center; gap:14px; }
+  .timer{
+    font-family:var(--mono); font-size:22px; font-weight:700;
+    background:var(--surface); border:1px solid var(--border);
+    padding:8px 14px; border-radius:8px; letter-spacing:0.03em;
+    display:flex; align-items:center; gap:8px; min-width:112px; justify-content:center;
+  }
+  .timer .cursor{ width:2px;height:16px;background:var(--accent); animation:blink 1s steps(1) infinite; }
+  .timer.warn{ color:var(--amber); border-color:var(--amber); }
+  .timer.danger{ color:var(--bad); border-color:var(--bad); }
+  @keyframes blink{50%{opacity:0;}}
+  .progress-pill{ font-family:var(--mono); font-size:12.5px; color:var(--muted); background:var(--surface); border:1px solid var(--border); padding:8px 12px; border-radius:8px; }
+  .progress-pill b{color:var(--text);}
+  #submitBtn{
+    font-family:var(--sans); font-weight:700; font-size:14px; color:#0e0e1a;
+    background:var(--accent); border:none; padding:11px 20px; border-radius:8px; cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  #submitBtn:hover{ box-shadow:0 0 0 4px rgba(255,159,107,0.18); }
+  #submitBtn:active{ transform:scale(0.97); }
+  #submitBtn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .wrap{ max-width:900px; margin:0 auto; padding:24px 20px; }
+  .intro{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin-bottom:26px; font-size:14px; color:var(--muted); line-height:1.6; }
+  .intro b{ color:var(--text); }
+  .intro code{ font-family:var(--mono); color:var(--accent); background:var(--surface-2); padding:1px 6px; border-radius:4px; }
+  #scorePanel{
+    display:none; background:var(--bg-elev); border:1px solid var(--border); border-radius:14px;
+    padding:24px; margin-bottom:30px; font-family:var(--mono); animation:fadeIn .4s ease;
+  }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);} }
+  #scorePanel .prompt{ color:var(--muted); font-size:13px; margin-bottom:10px;}
+  #scorePanel .prompt::before{ content:"$ "; color:var(--good); }
+  #scorePanel .bigscore{ font-size:44px; font-weight:700; color:var(--text); }
+  #scorePanel .bigscore span{ color:var(--muted); font-size:22px; }
+  #scorePanel .verdict{ margin-top:6px; font-size:14px; }
+  .verdict.good{ color:var(--good); } .verdict.mid{ color:var(--amber); } .verdict.bad{ color:var(--bad); }
+  #scorePanel .breakdown{ margin-top:16px; display:flex; gap:22px; font-size:13px; color:var(--muted); flex-wrap:wrap; }
+  #scorePanel .breakdown b{ font-size:16px; }
+  .b-correct b{ color:var(--good); } .b-wrong b{ color:var(--bad); } .b-skipped b{ color:var(--amber); }
+  .qcard{ background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:18px; transition:border-color .2s ease, box-shadow .2s ease; }
+  .qcard.correct{ border-color:var(--good); box-shadow:0 0 0 1px var(--good) inset; }
+  .qcard.wrong{ border-color:var(--bad); box-shadow:0 0 0 1px var(--bad) inset; }
+  .qtab{ display:flex; align-items:center; justify-content:space-between; padding:9px 16px; background:var(--surface-2); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12.5px; color:var(--muted); }
+  .qtab .qnum{ color:var(--accent); font-weight:700; }
+  .qtab .status-badge{ font-family:var(--sans); font-weight:700; font-size:11px; padding:2px 9px; border-radius:20px; display:none; }
+  .qcard.correct .status-badge{ display:inline-block; background:var(--good-bg); color:var(--good); }
+  .qcard.wrong .status-badge{ display:inline-block; background:var(--bad-bg); color:var(--bad); }
+  .code-wrap{ display:flex; }
+  pre.code{ margin:0; padding:14px 18px; font-family:var(--mono); font-size:13px; line-height:1.65; color:#cfd3f2; overflow-x:auto; white-space:pre; flex:1; tab-size:4; }
+  .answer-row{ display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--bg-elev); border-top:1px dashed var(--border); flex-wrap:wrap; }
+  .answer-row .prompt-sym{ font-family:var(--mono); color:var(--good); font-size:14px; }
+  .answer-row label{ font-family:var(--mono); font-size:12.5px; color:var(--muted); white-space:nowrap; }
+  .answer-row input{
+    flex:1; min-width:160px; background:var(--surface); border:1px solid var(--border); color:var(--text);
+    font-family:var(--mono); font-size:13.5px; padding:9px 12px; border-radius:7px; outline:none; transition:border-color .15s ease;
+  }
+  .answer-row input:focus{ border-color:var(--accent); }
+  .qcard.correct input{ border-color:var(--good); color:var(--good); }
+  .qcard.wrong input{ border-color:var(--bad); color:var(--bad); }
+  .correct-answer{ display:none; padding:0 16px 14px; font-family:var(--mono); font-size:12.5px; color:var(--good); }
+  .qcard.wrong .correct-answer{ display:block; }
+  .correct-answer b{ color:var(--muted); font-weight:400; }
+  footer{ max-width:900px; margin:10px auto 0; padding:0 20px; text-align:center; color:var(--muted); font-family:var(--mono); font-size:12px; }
+  @media (max-width:560px){
+    .timer{ font-size:18px; min-width:96px; }
+    .header-main{ flex-direction:column; align-items:flex-start; }
+    .hud{ width:100%; justify-content:space-between; }
+    #submitBtn{ width:100%; }
+    .difficulty{ margin-left:0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="titlebar">
+    <div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div>
+    <div class="filename">JavaOutputQuiz4.java — 30 questions</div>
+    <div class="difficulty">HARD</div>
+  </div>
+  <div class="header-main">
+    <div class="brand">
+      <h1>Predict the <span class="accent">Output</span>() <span style="color:var(--muted); font-size:14px; font-weight:600;">— Hard Mode</span></h1>
+      <p>// self-modifying arrays · dynamic bounds · two-pointer · DP grids · labeled loops</p>
+    </div>
+    <div class="hud">
+      <div class="progress-pill"><b id="answeredCount">0</b>/30 filled</div>
+      <div class="timer" id="timer"><span id="timerText">60:00</span><span class="cursor"></span></div>
+      <button id="submitBtn">Submit</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="intro">
+    These are harder than the usual output questions — arrays that get read and overwritten in the
+    <b>same pass</b>, loop bounds that change mid-loop, and nested index math. Trace through carefully
+    on paper before answering. Spacing is ignored when checking, and <b>true/false</b> answers are fine as-is.
+    You have <b>60 minutes</b>. The quiz auto-submits when the timer hits zero.
+  </div>
+
+  <div id="scorePanel">
+    <div class="prompt">java OutputQuiz4.java</div>
+    <div class="bigscore"><span id="scoreOutOf">0</span><span> / 30</span></div>
+    <div class="verdict" id="verdictText"></div>
+    <div class="breakdown">
+      <div class="b-correct">Correct: <b id="bCorrect">0</b></div>
+      <div class="b-wrong">Wrong: <b id="bWrong">0</b></div>
+      <div class="b-skipped">Skipped: <b id="bSkipped">0</b></div>
+    </div>
+  </div>
+
+  <div id="quiz"></div>
+
+</div>
+
+<footer>compiled &amp; scored entirely in your browser — nothing is sent anywhere</footer>
+
+<script>
+const questions = [
+{
+  file:"Snippet.java",
+  code:`int[] arr = {10, 20, 30, 40, 50};
+for(int i = 0; i < arr.length - 1; i++){
+    arr[i + 1] += arr[i];
+}
+System.out.println(arr[arr.length - 1]);`,
+  answers:["150"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] a = {2, 4, 6, 8, 10};
+int i = 0;
+while(i < a.length){
+    a[i] = a[i] + a[a.length - 1 - i];
+    i++;
+}
+System.out.println(a[2]);`,
+  answers:["12"]
+},
+{
+  file:"Snippet.java",
+  code:`int count = 0;
+for(int i = 1; i <= 5; i++){
+    for(int j = 1; j <= 5; j++){
+        if(i * j > 12){
+            break;
+        }
+        count++;
+    }
+}
+System.out.println(count);`,
+  answers:["19"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {3, 1, 4, 1, 5, 9, 2, 6};
+int i = 0, swaps = 0;
+do{
+    if(arr[i] > arr[i + 1]){
+        int temp = arr[i];
+        arr[i] = arr[i + 1];
+        arr[i + 1] = temp;
+        swaps++;
+    }
+    i++;
+} while(i < arr.length - 1);
+System.out.println(swaps);`,
+  answers:["4"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] m = {
+    {1,2,3,4},
+    {5,6,7,8},
+    {9,10,11,12}
+};
+int sum = 0;
+for(int i = 0; i < m.length; i++){
+    for(int j = i; j < m[i].length; j++){
+        sum += m[i][j];
+    }
+}
+System.out.println(sum);`,
+  answers:["54"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] grid = {
+    {1, 3, 5},
+    {7, 9, 2},
+    {4, 6, 8}
+};
+int target = 9;
+int foundRow = -1, foundCol = -1;
+search:
+for(int i = 0; i < grid.length; i++){
+    for(int j = 0; j < grid[i].length; j++){
+        if(grid[i][j] == target){
+            foundRow = i;
+            foundCol = j;
+            break search;
+        }
+    }
+}
+System.out.println(foundRow + "," + foundCol);`,
+  answers:["1,1"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {1, 2, 3, 4, 5, 6, 7, 8};
+int left = 0, right = arr.length - 1, sum = 0;
+while(left < right){
+    sum += arr[left] + arr[right];
+    left++;
+    right--;
+}
+System.out.println(sum);`,
+  answers:["36"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {5, 10, 15, 20, 25};
+int left = 0, right = arr.length - 1, sum = 0;
+while(left <= right){
+    if(left == right){
+        sum += arr[left];
+    } else {
+        sum += arr[left] + arr[right];
+    }
+    left++;
+    right--;
+}
+System.out.println(sum);`,
+  answers:["75"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] a = new int[4][4];
+for(int i = 0; i < 4; i++){
+    for(int j = 0; j < 4; j++){
+        if(i == 0 || j == 0){
+            a[i][j] = 1;
+        } else {
+            a[i][j] = a[i-1][j] + a[i][j-1];
+        }
+    }
+}
+System.out.println(a[3][3]);`,
+  answers:["20"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {1, 2, 3, 4, 5};
+int k = 2;
+for(int i = 0; i < k; i++){
+    int temp = arr[0];
+    for(int j = 0; j < arr.length - 1; j++){
+        arr[j] = arr[j+1];
+    }
+    arr[arr.length - 1] = temp;
+}
+for(int x : arr) System.out.print(x + " ");`,
+  answers:["3 4 5 1 2"]
+},
+{
+  file:"Snippet.java",
+  code:`int i = 1, j = 100, steps = 0;
+while(i < j){
+    i = i * 2;
+    j = j - 5;
+    steps++;
+}
+System.out.println(steps + " " + i + " " + j);`,
+  answers:["7 128 65"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {4, 3, 2, 1};
+int count = 0;
+for(int i = 0; i < arr.length; i++){
+    for(int j = i+1; j < arr.length; j++){
+        if(arr[i] > arr[j]) count++;
+    }
+}
+System.out.println(count);`,
+  answers:["6"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] m = {
+    {1,2,3},
+    {4,5,6},
+    {7,8,9}
+};
+for(int i = 0; i < m.length; i++){
+    for(int j = i+1; j < m[i].length; j++){
+        int temp = m[i][j];
+        m[i][j] = m[j][i];
+        m[j][i] = temp;
+    }
+}
+System.out.println(m[0][2] + " " + m[2][0]);`,
+  answers:["7 3"]
+},
+{
+  file:"Snippet.java",
+  code:`int a = 48, b = 18;
+while(a != b){
+    if(a > b) a -= b;
+    else b -= a;
+}
+System.out.println(a);`,
+  answers:["6"]
+},
+{
+  file:"Snippet.java",
+  code:`int sum = 0;
+for(int i = 1; i <= 5; i++){
+    if(i % 2 == 0) continue;
+    for(int j = 1; j <= 5; j++){
+        if(j % 2 == 0) continue;
+        sum += i + j;
+    }
+}
+System.out.println(sum);`,
+  answers:["54"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = new int[5];
+arr[0] = 1;
+for(int i = 1; i < arr.length; i++){
+    arr[i] = arr[i-1] * 2 + i;
+}
+int sum = 0;
+for(int x : arr) sum += x;
+System.out.println(sum);`,
+  answers:["73"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] m = {
+    {1,2,3,4},
+    {5,6,7,8},
+    {9,10,11,12},
+    {13,14,15,16}
+};
+int sum = 0;
+for(int i = 0; i < 4; i++){
+    for(int j = 0; j < 4; j++){
+        if(i == 0 || i == 3 || j == 0 || j == 3){
+            sum += m[i][j];
+        }
+    }
+}
+System.out.println(sum);`,
+  answers:["102"]
+},
+{
+  file:"Snippet.java",
+  code:`int n = 1234, rev = 0;
+while(n > 0){
+    int digit = n % 10;
+    rev = rev * 10 + digit;
+    n /= 10;
+}
+System.out.println(rev);`,
+  answers:["4321"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {1, 5, 3, 7, 2, 8};
+int target = 9;
+int count = 0;
+for(int i = 0; i < arr.length; i++){
+    for(int j = i+1; j < arr.length; j++){
+        if(arr[i] + arr[j] == target) count++;
+    }
+}
+System.out.println(count);`,
+  answers:["2"]
+},
+{
+  file:"Snippet.java",
+  code:`int n = 6, steps = 0;
+do{
+    if(n % 2 == 0) n = n / 2;
+    else n = n * 3 + 1;
+    steps++;
+} while(n != 1);
+System.out.println(steps);`,
+  answers:["8"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] a = {{1,2},{3,4}};
+int[][] b = {{5,6},{7,8}};
+int[][] c = new int[2][2];
+for(int i = 0; i < 2; i++){
+    for(int j = 0; j < 2; j++){
+        int sum = 0;
+        for(int k = 0; k < 2; k++){
+            sum += a[i][k] * b[k][j];
+        }
+        c[i][j] = sum;
+    }
+}
+System.out.println(c[1][1]);`,
+  answers:["50"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {2, 5, 1, 3, 4, 2, 1};
+int[] freq = new int[6];
+for(int x : arr){
+    freq[x]++;
+}
+int maxFreq = 0, maxVal = -1;
+for(int i = 0; i < freq.length; i++){
+    if(freq[i] > maxFreq){
+        maxFreq = freq[i];
+        maxVal = i;
+    }
+}
+System.out.println(maxVal + " " + maxFreq);`,
+  answers:["1 2"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] m = {
+    {1,2,3},
+    {2,5,6},
+    {3,6,9}
+};
+boolean symmetric = true;
+for(int i = 0; i < 3; i++){
+    for(int j = 0; j < 3; j++){
+        if(m[i][j] != m[j][i]){
+            symmetric = false;
+        }
+    }
+}
+System.out.println(symmetric);`,
+  answers:["true"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {10, 20, 30, 40, 50};
+int i = 0, sum = 0, count = 0;
+while(count < 8){
+    sum += arr[i % arr.length];
+    i++;
+    count++;
+}
+System.out.println(sum);`,
+  answers:["210"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] arr = {12, 35, 1, 10, 34, 1};
+int first = Integer.MIN_VALUE, second = Integer.MIN_VALUE;
+for(int i = 0; i < arr.length; i++){
+    if(arr[i] > first){
+        second = first;
+        first = arr[i];
+    } else if(arr[i] > second && arr[i] != first){
+        second = arr[i];
+    }
+}
+System.out.println(second);`,
+  answers:["34"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] m = {
+    {1,2,3},
+    {4,5,6},
+    {7,8,9}
+};
+for(int i = 0; i < 3; i++){
+    if(i % 2 == 0){
+        for(int j = 0; j < 3; j++){
+            System.out.print(m[i][j] + " ");
+        }
+    } else {
+        for(int j = 2; j >= 0; j--){
+            System.out.print(m[i][j] + " ");
+        }
+    }
+}`,
+  answers:["1 2 3 6 5 4 7 8 9"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] stack = new int[10];
+int top = -1;
+for(int i = 1; i <= 5; i++){
+    top++;
+    stack[top] = i * i;
+}
+while(top >= 0){
+    if(stack[top] % 2 == 0){
+        System.out.print(stack[top] + " ");
+    }
+    top--;
+}`,
+  answers:["16 4"]
+},
+{
+  file:"Snippet.java",
+  code:`int total = 0;
+int limit = 5;
+for(int i = 0; i < limit; i++){
+    for(int j = 0; j < limit - i; j++){
+        total++;
+    }
+    limit--;
+}
+System.out.println(total);`,
+  answers:["9"]
+},
+{
+  file:"Snippet.java",
+  code:`int[][] m = {
+    {3, 7, 8},
+    {5, 2, 9},
+    {6, 1, 4}
+};
+int sum = 0;
+for(int i = 0; i < 3; i++){
+    int rowMax = m[i][0];
+    for(int j = 1; j < 3; j++){
+        if(m[i][j] > rowMax) rowMax = m[i][j];
+    }
+    sum += rowMax;
+}
+System.out.println(sum);`,
+  answers:["23"]
+},
+{
+  file:"Snippet.java",
+  code:`int[] a = {1, 3, 5, 7};
+int[] b = {2, 4, 6, 8, 10};
+int i = 0, j = 0, count = 0;
+while(i < a.length && j < b.length){
+    if(a[i] < b[j]){
+        i++;
+    } else {
+        j++;
+    }
+    count++;
+}
+System.out.println(count + " " + i + " " + j);`,
+  answers:["7 4 3"]
+}
+];
+
+const quizEl = document.getElementById('quiz');
+
+questions.forEach((q, idx) => {
+  const card = document.createElement('div');
+  card.className = 'qcard';
+  card.id = 'card-' + idx;
+
+  const num = String(idx + 1).padStart(2, '0');
+
+  card.innerHTML = `
+    <div class="qtab">
+      <span><span class="qnum">Q${num}</span> · ${q.file}</span>
+      <span class="status-badge"></span>
+    </div>
+    <div class="code-wrap"><pre class="code"></pre></div>
+    <div class="answer-row">
+      <span class="prompt-sym">&gt;</span>
+      <label for="input-${idx}">Output:</label>
+      <input type="text" id="input-${idx}" autocomplete="off" spellcheck="false" placeholder="type what gets printed...">
+    </div>
+    <div class="correct-answer"><b>Expected:</b> <span class="answer-text"></span></div>
+  `;
+
+  card.querySelector('pre.code').textContent = q.code;
+  card.querySelector('.answer-text').textContent = q.answers[0];
+  quizEl.appendChild(card);
+});
+
+const answeredCountEl = document.getElementById('answeredCount');
+quizEl.addEventListener('input', () => {
+  const filled = questions.filter((_, i) => document.getElementById('input-' + i).value.trim() !== '').length;
+  answeredCountEl.textContent = filled;
+});
+
+function normalize(str){
+  return str.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function isCorrect(idx){
+  const val = normalize(document.getElementById('input-' + idx).value);
+  return questions[idx].answers.some(a => normalize(a) === val);
+}
+
+let secondsLeft = 60 * 60;
+const timerText = document.getElementById('timerText');
+const timerBox = document.getElementById('timer');
+let submitted = false;
+
+function renderTimer(){
+  const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+  const s = (secondsLeft % 60).toString().padStart(2, '0');
+  timerText.textContent = m + ':' + s;
+  timerBox.classList.toggle('warn', secondsLeft <= 300 && secondsLeft > 60);
+  timerBox.classList.toggle('danger', secondsLeft <= 60);
+}
+renderTimer();
+
+const tick = setInterval(() => {
+  if (submitted) { clearInterval(tick); return; }
+  secondsLeft--;
+  renderTimer();
+  if (secondsLeft <= 0) {
+    clearInterval(tick);
+    submitQuiz(true);
+  }
+}, 1000);
+
+document.getElementById('submitBtn').addEventListener('click', () => submitQuiz(false));
+
+function submitQuiz(auto){
+  if (submitted) return;
+  submitted = true;
+  clearInterval(tick);
+  document.getElementById('submitBtn').disabled = true;
+
+  let correctCount = 0, wrongCount = 0, skippedCount = 0;
+
+  questions.forEach((q, idx) => {
+    const card = document.getElementById('card-' + idx);
+    const input = document.getElementById('input-' + idx);
+    const val = input.value.trim();
+    input.disabled = true;
+
+    if (val === '') {
+      skippedCount++;
+      card.classList.add('wrong');
+    } else if (isCorrect(idx)) {
+      correctCount++;
+      card.classList.add('correct');
+    } else {
+      wrongCount++;
+      card.classList.add('wrong');
+    }
+  });
+
+  document.getElementById('scoreOutOf').textContent = correctCount;
+  document.getElementById('bCorrect').textContent = correctCount;
+  document.getElementById('bWrong').textContent = wrongCount;
+  document.getElementById('bSkipped').textContent = skippedCount;
+
+  const verdict = document.getElementById('verdictText');
+  const pct = correctCount / questions.length;
+  verdict.className = 'verdict';
+  if (auto) {
+    verdict.textContent = '// time\'s up — auto-submitted';
+  } else if (pct >= 0.85) {
+    verdict.textContent = '// exit code 0 — you traced every pointer correctly';
+    verdict.classList.add('good');
+  } else if (pct >= 0.5) {
+    verdict.textContent = '// partial pass — re-trace the ones you missed, index by index';
+    verdict.classList.add('mid');
+  } else {
+    verdict.textContent = '// exit code 1 — these are tricky, walk through the loop bounds again';
+    verdict.classList.add('bad');
+  }
+
+  const panel = document.getElementById('scorePanel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>
